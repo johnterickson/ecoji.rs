@@ -1,9 +1,9 @@
 //! Copied from libstd, because it is unstable there.
 
-use std::result;
-use std::io::*;
-use std::fmt;
 use std::error as std_error;
+use std::fmt;
+use std::io::*;
+use std::result;
 use std::str;
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ pub struct Chars<R> {
 
 impl<R> Chars<R> {
     pub fn new(inner: R) -> Chars<R> {
-        Chars { inner, }
+        Chars { inner }
     }
 }
 
@@ -38,8 +38,12 @@ impl<R: Read> Iterator for Chars<R> {
             Err(e) => return Some(Err(CharsError::Other(e))),
         };
         let width = utf8_char_width(first_byte);
-        if width == 1 { return Some(Ok(first_byte as char)) }
-        if width == 0 { return Some(Err(CharsError::NotUtf8)) }
+        if width == 1 {
+            return Some(Ok(first_byte as char));
+        }
+        if width == 0 {
+            return Some(Err(CharsError::NotUtf8));
+        }
         let mut buf = [first_byte, 0, 0, 0];
         {
             let mut start = 1;
@@ -60,16 +64,10 @@ impl<R: Read> Iterator for Chars<R> {
 }
 
 impl std_error::Error for CharsError {
-    fn description(&self) -> &str {
-        match *self {
-            CharsError::NotUtf8 => "invalid utf8 encoding",
-            CharsError::Other(ref e) => std_error::Error::description(e),
-        }
-    }
-    fn cause(&self) -> Option<&std_error::Error> {
+    fn cause(&self) -> Option<& dyn std_error::Error> {
         match *self {
             CharsError::NotUtf8 => None,
-            CharsError::Other(ref e) => e.cause(),
+            CharsError::Other(ref e) => e.source(),
         }
     }
 }
@@ -83,7 +81,7 @@ impl fmt::Display for CharsError {
     }
 }
 
-fn read_one_byte(reader: &mut Read) -> Option<Result<u8>> {
+fn read_one_byte(reader: &mut dyn Read) -> Option<Result<u8>> {
     let mut buf = [0];
     loop {
         return match reader.read(&mut buf) {
@@ -97,25 +95,24 @@ fn read_one_byte(reader: &mut Read) -> Option<Result<u8>> {
 
 // https://tools.ietf.org/html/rfc3629
 static UTF8_CHAR_WIDTH: [u8; 256] = [
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 0x1F
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 0x3F
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 0x5F
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // 0x7F
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0x9F
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0xBF
-0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
-2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, // 0xDF
-3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3, // 0xEF
-4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0, // 0xFF
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, // 0x1F
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, // 0x3F
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, // 0x5F
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, // 0x7F
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, // 0x9F
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, // 0xBF
+    0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, // 0xDF
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, // 0xEF
+    4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xFF
 ];
 
 fn utf8_char_width(b: u8) -> usize {
     return UTF8_CHAR_WIDTH[b as usize] as usize;
 }
-

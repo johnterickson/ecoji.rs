@@ -29,7 +29,7 @@ build-binary = ["clap"]
 phf_codegen = "0.7.21"
 
 [dev-dependencies]
-quickcheck = "0.6"
+quickcheck = "1.0.3"
 
 [dependencies]
 phf = "0.7.21"

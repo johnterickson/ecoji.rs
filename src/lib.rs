@@ -132,28 +132,69 @@
 //! implies that the only supported encoding for the emoji output is UTF-8.
 
 extern crate phf;
-#[cfg(test)] #[macro_use] extern crate quickcheck;
+#[cfg(test)]
+#[macro_use]
+extern crate quickcheck;
 
-mod emojis;
-mod encode;
-mod decode;
 mod chars;
+mod decode;
+pub mod emojis;
+mod encode;
 
-pub use encode::{encode, encode_to_string};
-pub use decode::{decode, decode_to_vec, decode_to_string};
+pub use crate::emojis::{VERSION1, VERSION2};
+use std::io;
+use std::io::{Read, Write};
+
+pub fn encode<R: Read + ?Sized, W: Write + ?Sized>(source: &mut R, destination: &mut W ) -> io::Result<usize> {
+    VERSION1.encode(source, destination)
+}
+
+pub fn encode_to_string<R: Read + ?Sized>(source: &mut R) -> io::Result<String> {
+    VERSION1.encode_to_string(source)
+}
+
+pub fn decode<R: Read + ?Sized, W: Write + ?Sized>(source: &mut R, destination: &mut W) -> io::Result<usize> {
+    VERSION1.decode(source, destination)
+}
+
+pub fn decode_to_string<R: Read + ?Sized>(source: &mut R) -> io::Result<String> {
+    VERSION1.decode_to_string(source)
+}
+
+pub fn decode_to_vec<R: Read + ?Sized>(source: &mut R) -> io::Result<Vec<u8>> {
+    VERSION1.decode_to_vec(source)
+}
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use crate::emojis::VERSIONS;
+    use quickcheck::{Arbitrary, Gen};
 
+    #[derive(Debug, Clone)]
+    enum VersionChoice {
+        V1,
+        V2,
+    }
+
+    impl Arbitrary for VersionChoice {
+        fn arbitrary(g: &mut Gen) -> VersionChoice {
+            if bool::arbitrary(g) {
+                VersionChoice::V1
+            } else {
+                VersionChoice::V2
+            }
+        }
+    }
+ 
     quickcheck! {
-        fn encode_then_decode_identity(input: Vec<u8>) -> bool {
-            let encoded = encode_to_string(&mut input.as_slice()).unwrap();
-            let output = decode_to_vec(&mut encoded.as_bytes()).unwrap();
+        fn encode_then_decode_identity(v: VersionChoice, input: Vec<u8>) -> bool {
+            let v = VERSIONS[v as usize];
+            let encoded = v.encode_to_string(&mut input.as_slice()).unwrap();
+            let output = v.decode_to_vec(&mut encoded.as_bytes()).unwrap();
             input == output
         }
 
-        fn encoded_data_has_the_same_sort_order(input: Vec<Vec<u8>>) -> bool {
+        fn encoded_data_has_the_same_sort_order(v: VersionChoice, input: Vec<Vec<u8>>) -> bool {
             // input          ---sort--->  input_sorted
             //
             // input          --encode-->  output
@@ -162,19 +203,32 @@ mod test {
             //
             // input_sorted       ==       input2_sorted
 
+            let v = VERSIONS[v as usize];
+
+            if v.VERSION_NUMBER != 1 {
+                // Ecoji V1 supported sorting encoded data. However V2 does not support this.
+                return true;
+            }
+
             let mut input_sorted = input.clone();
             input_sorted.sort_unstable();
 
             let output: Vec<_> = input.into_iter()
-                .map(|b| encode_to_string(&mut b.as_slice()).unwrap())
+                .map(|b| v.encode_to_string(&mut b.as_slice()).unwrap())
                 .collect();
+
+            dbg!(&output);
 
             let mut output_sorted = output.clone();
             output_sorted.sort_unstable();
 
+            dbg!(&output_sorted);
+
             let input2_sorted: Vec<_> = output_sorted.into_iter()
-                .map(|s| decode_to_vec(&mut s.as_bytes()).unwrap())
+                .map(|s| v.decode_to_vec(&mut s.as_bytes()).unwrap())
                 .collect();
+
+            assert_eq!(input_sorted, input2_sorted);
 
             input_sorted == input2_sorted
         }
