@@ -52,7 +52,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         let mut rev_map = phf_codegen::Map::new();
 
         writeln!(&mut output, "  EMOJIS: [")?;
-        for (i, line) in input.lines().into_iter().take(1024).enumerate() {
+        for (i, line) in input.lines().take(1024).enumerate() {
             let line = line?;
             writeln!(&mut output, r"    '\u{{{}}}',  // {}", &line, i)?;
             rev_map.entry(

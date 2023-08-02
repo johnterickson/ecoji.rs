@@ -2,7 +2,7 @@ use crate::emojis::*;
 use std::io::{self, Read, Write};
 impl Version {
     fn encode_chunk<W: Write + ?Sized>(&self, s: &[u8], out: &mut W) -> io::Result<usize> {
-        assert!(s.len() > 0 && s.len() <= 5, "Unexpected slice length");
+        assert!(!s.is_empty() && s.len() <= 5, "Unexpected slice length");
 
         let (b0, b1, b2, b3, b4) = (
             s[0] as usize,
@@ -13,7 +13,7 @@ impl Version {
         );
 
         let mut chars = [
-            self.EMOJIS[b0 << 2 | b1 >> 6] as char,
+            self.EMOJIS[b0 << 2 | b1 >> 6],
             self.PADDING,
             self.PADDING,
             self.PADDING,

@@ -92,12 +92,12 @@ impl Version {
             };
 
             let mut last_was_padding = false;
-            for i in 1..4 {
+            for chars in chars.iter_mut().skip(1) {
                 match input.next() {
                     Some(c) => {
                         let c = self.check_char(&mut decoder, c)?;
                         last_was_padding = decoder.is_padding(c);
-                        chars[i] = c;
+                        *chars = c;
                     }
                     None => {
                         if !last_was_padding {
