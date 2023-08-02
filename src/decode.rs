@@ -82,11 +82,12 @@ impl Version {
         let mut input = Chars::new(source);
 
         let mut bytes_written = 0;
+        let mut decoder = self;
         loop {
             let mut chars = ['\0'; 4];
 
             match input.next() {
-                Some(c) => chars[0] = self.check_char(c)?,
+                Some(c) => chars[0] = self.check_char(&mut decoder, c)?,
                 None => break,
             };
 
@@ -94,8 +95,8 @@ impl Version {
             for i in 1..4 {
                 match input.next() {
                     Some(c) => {
-                        let c = self.check_char(c)?;
-                        last_was_padding = self.is_padding(c);
+                        let c = self.check_char(&mut decoder, c)?;
+                        last_was_padding = decoder.is_padding(c);
                         chars[i] = c;
                     }
                     None => {
@@ -109,20 +110,20 @@ impl Version {
             }
 
             let (bits1, bits2, bits3) = (
-                self.EMOJIS_REV.get(&chars[0]).cloned().unwrap_or(0),
-                self.EMOJIS_REV.get(&chars[1]).cloned().unwrap_or(0),
-                self.EMOJIS_REV.get(&chars[2]).cloned().unwrap_or(0),
+                decoder.EMOJIS_REV.get(&chars[0]).cloned().unwrap_or(0),
+                decoder.EMOJIS_REV.get(&chars[1]).cloned().unwrap_or(0),
+                decoder.EMOJIS_REV.get(&chars[2]).cloned().unwrap_or(0),
             );
-            let bits4 = if chars[3] == self.PADDING_40 {
+            let bits4 = if chars[3] == decoder.PADDING_40 {
                 0
-            } else if chars[3] == self.PADDING_41 {
+            } else if chars[3] == decoder.PADDING_41 {
                 1 << 8
-            } else if chars[3] == self.PADDING_42 {
+            } else if chars[3] == decoder.PADDING_42 {
                 2 << 8
-            } else if chars[3] == self.PADDING_43 {
+            } else if chars[3] == decoder.PADDING_43 {
                 3 << 8
             } else {
-                self.EMOJIS_REV.get(&chars[3]).cloned().unwrap_or(0)
+                decoder.EMOJIS_REV.get(&chars[3]).cloned().unwrap_or(0)
             };
 
             let out = [
@@ -133,16 +134,16 @@ impl Version {
                 (bits4 & 0xff) as u8,
             ];
 
-            let out = if chars[1] == self.PADDING {
+            let out = if chars[1] == decoder.PADDING {
                 &out[..1]
-            } else if chars[2] == self.PADDING {
+            } else if chars[2] == decoder.PADDING {
                 &out[..2]
-            } else if chars[3] == self.PADDING {
+            } else if chars[3] == decoder.PADDING {
                 &out[..3]
-            } else if chars[3] == self.PADDING_40
-                || chars[3] == self.PADDING_41
-                || chars[3] == self.PADDING_42
-                || chars[3] == self.PADDING_43
+            } else if chars[3] == decoder.PADDING_40
+                || chars[3] == decoder.PADDING_41
+                || chars[3] == decoder.PADDING_42
+                || chars[3] == decoder.PADDING_43
             {
                 &out[..4]
             } else {
@@ -225,19 +226,27 @@ impl Version {
         String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
     }
 
-    fn check_char(&self, c: Result<char, CharsError>) -> io::Result<char> {
+    fn check_char(&self, decoder: &mut &Version, c: Result<char, CharsError>) -> io::Result<char> {
         c.map_err(CharsError::into_io).and_then(|c| {
-            if self.is_valid_alphabet_char(c) {
-                Ok(c)
+            if decoder.is_valid_alphabet_char(c) {
+                return Ok(c);
             } else {
-                Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!(
-                        "Input character '{}' is not a part of the Ecoji alphabet",
-                        c
-                    ),
-                ))
+                // switch to the other decoder if we've not already
+                if std::ptr::eq(self, *decoder) {
+                    *decoder = self.other_version();
+                    if decoder.is_valid_alphabet_char(c) {
+                        return Ok(c);
+                    }
+                }
             }
+
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "Input character '{}' is not a part of the Ecoji alphabet",
+                    c
+                ),
+            ))
         })
     }
 }
@@ -252,8 +261,10 @@ mod tests {
     }
 
     fn check_all(input: &[&[u8]], output: &[u8]) {
-        for (i, v) in VERSIONS.iter().enumerate() {
-            check(v, &input[i], output);
+        for v in VERSIONS {
+            for input in input {
+                check(v, input, output);
+            }
         }
     }
 

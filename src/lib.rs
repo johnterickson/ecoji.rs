@@ -167,7 +167,7 @@ pub fn decode_to_vec<R: Read + ?Sized>(source: &mut R) -> io::Result<Vec<u8>> {
 
 #[cfg(test)]
 mod test {
-    use crate::emojis::VERSIONS;
+    use crate::{emojis::VERSIONS, VERSION1, VERSION2};
     use quickcheck::{Arbitrary, Gen};
 
     #[derive(Debug, Clone)]
@@ -185,12 +185,21 @@ mod test {
             }
         }
     }
+
+    #[test]
+    fn repro() {
+        let input = vec![64];
+        let encoded = VERSION2.encode_to_string(&mut input.as_slice()).unwrap();
+        let output = VERSION1.decode_to_vec(&mut encoded.as_bytes()).unwrap();
+        assert_eq!(input, output);
+    }
  
     quickcheck! {
-        fn encode_then_decode_identity(v: VersionChoice, input: Vec<u8>) -> bool {
-            let v = VERSIONS[v as usize];
-            let encoded = v.encode_to_string(&mut input.as_slice()).unwrap();
-            let output = v.decode_to_vec(&mut encoded.as_bytes()).unwrap();
+        fn encode_then_decode_identity(encode: VersionChoice, decode: VersionChoice, input: Vec<u8>) -> bool {
+            let encode = VERSIONS[encode as usize];
+            let decode = VERSIONS[decode as usize];
+            let encoded = encode.encode_to_string(&mut input.as_slice()).unwrap();
+            let output = decode.decode_to_vec(&mut encoded.as_bytes()).unwrap();
             input == output
         }
 

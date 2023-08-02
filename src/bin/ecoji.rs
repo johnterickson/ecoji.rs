@@ -24,10 +24,8 @@ fn main() {
     let version = match (matches.is_present("version1"), matches.is_present("version2")) {
         (true, true) => panic!("Both V1 and V2 selected."),
         (false, true) => VERSION2,
-        _ => VERSION1,
+        (_ , false) => VERSION1,
     };
-
-    dbg!(version.VERSION_NUMBER);
 
     let (stdin, stdout) = (io::stdin(), io::stdout());
     let (mut stdin, mut stdout) = (stdin.lock(), stdout.lock());

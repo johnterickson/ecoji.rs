@@ -13,6 +13,14 @@ pub struct Version {
 include!(concat!(env!("OUT_DIR"), "/emojis.rs"));
 
 impl Version {
+    pub fn other_version(&self) -> &'static Version {
+        match self.VERSION_NUMBER {
+            1 => &VERSION2,
+            2 => &VERSION1,
+            _ => panic!(),
+        }
+    }
+
     pub fn is_padding(&self, c: char) -> bool {
         [
             self.PADDING,
