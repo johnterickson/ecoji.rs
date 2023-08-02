@@ -64,7 +64,7 @@ impl<R: Read> Iterator for Chars<R> {
 }
 
 impl std_error::Error for CharsError {
-    fn cause(&self) -> Option<& dyn std_error::Error> {
+    fn cause(&self) -> Option<&dyn std_error::Error> {
         match *self {
             CharsError::NotUtf8 => None,
             CharsError::Other(ref e) => e.source(),

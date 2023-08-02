@@ -145,7 +145,10 @@ pub use crate::emojis::{VERSION1, VERSION2};
 use std::io;
 use std::io::{Read, Write};
 
-pub fn encode<R: Read + ?Sized, W: Write + ?Sized>(source: &mut R, destination: &mut W ) -> io::Result<usize> {
+pub fn encode<R: Read + ?Sized, W: Write + ?Sized>(
+    source: &mut R,
+    destination: &mut W,
+) -> io::Result<usize> {
     VERSION1.encode(source, destination)
 }
 
@@ -153,7 +156,10 @@ pub fn encode_to_string<R: Read + ?Sized>(source: &mut R) -> io::Result<String> 
     VERSION1.encode_to_string(source)
 }
 
-pub fn decode<R: Read + ?Sized, W: Write + ?Sized>(source: &mut R, destination: &mut W) -> io::Result<usize> {
+pub fn decode<R: Read + ?Sized, W: Write + ?Sized>(
+    source: &mut R,
+    destination: &mut W,
+) -> io::Result<usize> {
     VERSION1.decode(source, destination)
 }
 
@@ -193,7 +199,7 @@ mod test {
         let output = VERSION1.decode_to_vec(&mut encoded.as_bytes()).unwrap();
         assert_eq!(input, output);
     }
- 
+
     quickcheck! {
         fn encode_then_decode_identity(encode: VersionChoice, decode: VersionChoice, input: Vec<u8>) -> bool {
             let encode = VERSIONS[encode as usize];

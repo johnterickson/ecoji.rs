@@ -173,11 +173,11 @@ mod tests {
         let buf = v.encode_to_string(&mut input.clone()).unwrap();
         let chars: Vec<_> = buf.chars().collect();
         let mut output: Vec<_> = output.iter().cloned().collect();
-        while 
-            v.VERSION_NUMBER > 1 && 
-            output.get(output.len()-2..output.len()) == Some(&[v.PADDING, v.PADDING]) {
-                output.pop();
-            }
+        while v.VERSION_NUMBER > 1
+            && output.get(output.len() - 2..output.len()) == Some(&[v.PADDING, v.PADDING])
+        {
+            output.pop();
+        }
         assert_eq!(output, chars.as_slice());
     }
 
