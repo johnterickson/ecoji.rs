@@ -1,9 +1,9 @@
-extern crate ecoji;
 extern crate clap;
+extern crate ecoji;
 
 use std::io;
 
-use clap::{arg, ArgAction, Command, crate_version};
+use clap::{arg, crate_version, ArgAction, Command};
 use ecoji::*;
 
 fn main() {
@@ -19,10 +19,7 @@ fn main() {
         .arg(arg!(--v2 "Use version 2").action(ArgAction::SetTrue))
         .get_matches();
 
-    let version = match (
-        matches.get_flag("v1"),
-        matches.get_flag("v2"),
-    ) {
+    let version = match (matches.get_flag("v1"), matches.get_flag("v2")) {
         (true, true) => panic!("Both V1 and V2 selected."),
         (false, true) => VERSION2,
         (_, false) => VERSION1,
