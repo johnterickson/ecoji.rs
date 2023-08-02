@@ -63,7 +63,7 @@ fn run() -> Result<(), Box<dyn Error>> {
         writeln!(&mut output, "  ],")?;
 
         write!(&mut output, "  EMOJIS_REV: ")?;
-        rev_map.build(&mut output)?;
+        writeln!(&mut output, "{}", rev_map.build())?;
         writeln!(&mut output, ",")?;
 
         writeln!(&mut output, r"}};")?;
