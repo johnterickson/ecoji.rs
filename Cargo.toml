@@ -2,6 +2,7 @@
 authors = ["Vladimir Matveev <vladimir.matweev@gmail.com>"]
 name = "ecoji"
 version = "1.0.0"
+edition = "2018"
 description = "Provides base-1024 encoding and decoding using an alphabet of emojis."
 documentation = "https://docs.rs/ecoji"
 homepage = "https://github.com/netvl/ecoji.rs"
