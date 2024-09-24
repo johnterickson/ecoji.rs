@@ -255,8 +255,8 @@ impl Version {
 mod tests {
     use super::*;
 
-    fn check(v: &Version, input: &[u8], output: &[u8]) {
-        let buf = v.decode_to_vec(&mut input.clone()).unwrap();
+    fn check(v: &Version, mut input: &[u8], output: &[u8]) {
+        let buf = v.decode_to_vec(&mut input).unwrap();
         assert_eq!(output, buf.as_slice());
     }
 

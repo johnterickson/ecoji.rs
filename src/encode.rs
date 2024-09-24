@@ -160,8 +160,8 @@ fn read_exact<R: Read + ?Sized>(source: &mut R, mut buf: &mut [u8]) -> io::Resul
 mod tests {
     use super::*;
 
-    fn check(v: &Version, input: &[u8], output: &[u8]) {
-        let encoded = v.encode_to_string(&mut input.clone()).unwrap();
+    fn check(v: &Version, mut input: &[u8], output: &[u8]) {
+        let encoded = v.encode_to_string(&mut input).unwrap();
         dbg!(output.len());
         dbg!(std::str::from_utf8(output).unwrap());
         dbg!(encoded.as_bytes().len());
@@ -169,8 +169,8 @@ mod tests {
         assert_eq!(output, encoded.as_bytes());
     }
 
-    fn check_chars(v: &Version, input: &[u8], output: &[char]) {
-        let buf = v.encode_to_string(&mut input.clone()).unwrap();
+    fn check_chars(v: &Version, mut input: &[u8], output: &[char]) {
+        let buf = v.encode_to_string(&mut input).unwrap();
         let chars: Vec<_> = buf.chars().collect();
         let mut output: Vec<_> = output.iter().cloned().collect();
         while v.VERSION_NUMBER > 1
